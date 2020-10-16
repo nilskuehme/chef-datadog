@@ -18,9 +18,9 @@ class Chef
           dd_agent_version = dd_agent_version[platform_family]
         end
         if !dd_agent_version.nil? && dd_agent_version.match(/^[0-9]+\.[0-9]+\.[0-9]+((?:~|-)[^0-9\s-]+[^-\s]*)?$/)
-          if node['platform_family'] == 'suse' || node['platform_family'] == 'debian'
+          if platform_family?('suse', 'debian')
             dd_agent_version = '1:' + dd_agent_version + '-1'
-          elsif node['platform_family'] == 'rhel' || node['platform_family'] == 'fedora' || node['platform_family'] == 'amazon'
+          elsif platform_family?('rhel', 'fedora', 'amazon')
             dd_agent_version += '-1'
           end
         end
@@ -96,6 +96,25 @@ class Chef
 
       def cookbook_version(run_context)
         run_context.cookbook_collection['datadog'].version
+      end
+
+      def upstart_platform?(node)
+        return agent_major_version > 5 &&
+          (((node['platform'] == 'amazon' || node['platform_family'] == 'amazon') && node['platform_version'].to_i != 2) ||
+           (node['platform'] == 'ubuntu' && node['platform_version'].to_f < 15.04) || # chef <11.14 doesn't use the correct service provider
+          (node['platform'] != 'amazon' && node['platform_family'] == 'rhel' && node['platform_version'].to_i < 7))
+      end
+
+      def service_provider(node)
+        if node['datadog']['service_provider']
+          specified_provider = node['datadog']['service_provider']
+          if Chef::Provider::Service.constants.include?(specified_provider.to_sym)
+            service_provider = Chef::Provider::Service.const_get(specified_provider)
+          end
+          service_provider
+        elsif upstart_platform?(node)
+          Chef::Provider::Service::Upstart
+        end
       end
 
       private

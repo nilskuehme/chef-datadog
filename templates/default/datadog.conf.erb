@@ -141,7 +141,7 @@ collector_log_file: <%= node['datadog']['log_file_directory'] %>/collector.log
 forwarder_log_file: <%= node['datadog']['log_file_directory'] %>/forwarder.log
 dogstatsd_log_file: <%= node['datadog']['log_file_directory'] %>/dogstatsd.log
 jmxfetch_log_file: <%= node['datadog']['log_file_directory'] %>/jmxfetch.log
-<% unless node['platform_family'] == 'windows' -%>
+<% unless platform_family?('windows') -%>
 go-metro_log_file: <%= node['datadog']['log_file_directory'] %>/go-metro.log
 <% end -%>
 <% end -%>
