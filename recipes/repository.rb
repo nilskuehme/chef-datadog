@@ -28,7 +28,7 @@ agent_major_version = Chef::Datadog.agent_major_version(node)
 
 # A2923DFF56EDA6E76E55E492D3A80E30382E94DE expires in 2022
 # D75CEA17048B9ACBF186794B32637D44F14F620E expires in 2032
-apt_gpg_keys = ['A2923DFF56EDA6E76E55E492D3A80E30382E94DE', 'D75CEA17048B9ACBF186794B32637D44F14F620E']
+#apt_gpg_keys = ['A2923DFF56EDA6E76E55E492D3A80E30382E94DE', 'D75CEA17048B9ACBF186794B32637D44F14F620E']
 
 # DATADOG_RPM_KEY_E09422B3.public expires in 2022
 # DATADOG_RPM_KEY_20200908.public expires in 2024
@@ -65,29 +65,22 @@ when 'debian'
   retries = node['datadog']['aptrepo_retries']
   keyserver = node['datadog']['aptrepo_use_backup_keyserver'] ? node['datadog']['aptrepo_backup_keyserver'] : node['datadog']['aptrepo_keyserver']
   # Add APT repositories
-  if Chef::VERSION.to_i >= 13.4
-    apt_repository 'datadog' do
-      keyserver keyserver
-      key apt_gpg_keys
-      uri node['datadog']['aptrepo']
-      distribution node['datadog']['aptrepo_dist']
-      components components
-      action :add
-      retries retries
-    end
-  else
-    # Works as long as both key entries serves the same content
-    apt_gpg_keys.each do |apt_gpg_key|
-      apt_repository 'datadog' do
-        keyserver keyserver
-        key apt_gpg_key
-        uri node['datadog']['aptrepo']
-        distribution node['datadog']['aptrepo_dist']
-        components components
-        action :add
-        retries retries
-      end
-    end
+  # A2923DFF56EDA6E76E55E492D3A80E30382E94DE expires in 2022
+  apt_repository 'datadog' do
+    keyserver keyserver
+    key 'A2923DFF56EDA6E76E55E492D3A80E30382E94DE'
+    uri node['datadog']['aptrepo']
+    distribution node['datadog']['aptrepo_dist']
+    components components
+    action :add
+    retries retries
+  end
+
+  # Trust new APT key
+  # D75CEA17048B9ACBF186794B32637D44F14F620E expires in 2032
+  execute 'apt_key import key F14F620E' do
+    command "apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 D75CEA17048B9ACBF186794B32637D44F14F620E"
+    not_if 'apt-key adv --list-public-keys --with-fingerprint --with-colons | grep "32637D44F14F620E" | grep pub'
   end
 
   # Previous versions of the cookbook could create these repo files, make sure we remove it now

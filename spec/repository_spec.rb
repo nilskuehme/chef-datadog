@@ -14,8 +14,14 @@ describe 'datadog::repository' do
       expect(chef_run).to install_package('install-apt-transport-https')
     end
 
-    it 'sets up an apt repo with fingerprint A2923DFF56EDA6E76E55E492D3A80E30382E94DE and D75CEA17048B9ACBF186794B32637D44F14F620E' do
-      expect(chef_run).to add_apt_repository('datadog')
+    it 'sets up an apt repo with fingerprint A2923DFF56EDA6E76E55E492D3A80E30382E94DE' do
+      expect(chef_run).to add_apt_repository('datadog').with(
+        key: ['A2923DFF56EDA6E76E55E492D3A80E30382E94DE']
+      )
+    end
+
+    it 'trusts the new key with fingerprint D75CEA17048B9ACBF186794B32637D44F14F620E' do
+      expect(chef_run).to run_execute('apt_key import key F14F620E')
     end
 
     it 'removes the datadog-beta repo' do
